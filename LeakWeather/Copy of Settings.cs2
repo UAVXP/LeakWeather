@@ -1,0 +1,127 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using System.IO;
+using System.Runtime.InteropServices;
+using MsgPack.Serialization;
+
+namespace LeakWeather
+{
+	class Settings
+	{
+		public struct settings
+		{
+			//	public bool isUpdateAfterLoad;
+			//	public int choosedUnits;
+			//	public int updateTime;
+			public byte isUpdateAfterLoad;
+			public byte choosedUnits;
+			public byte updateTime;
+			public int cityID;
+			/*	private char[] cityName;
+				public void setCityName(int size, char[] name)
+				{
+					cityName = new char[size];
+					cityName = name;
+				}
+				public void setCityName(int size, String name)
+				{
+					cityName = new char[size];
+					cityName = name.ToCharArray();
+				}
+				public string getCityName()
+				{
+				//	BinaryReader test = new BinaryReader();
+				//	test.ReadChars
+					return new string(cityName);
+				}*/
+			//	public string cityName;
+			//	public String cityName;
+			//	public char[] cityName;
+				public byte[] cityName;
+			/*	private char[] cityName;
+				public void setCityName(string name)
+				{
+					cityName = name.ToCharArray();
+				}
+				public char[] getCityName()
+				{
+					return cityName;
+				}*/
+		};
+
+		public static Settings s = new Settings();
+		public static Settings.settings Set = new Settings.settings();
+
+		public Settings()
+		{
+			Set.isUpdateAfterLoad = 0;
+			Set.choosedUnits = 0;
+			Set.updateTime = 0;
+			Set.cityID = 0;
+		//	Set.cityName = "";
+			Set.cityName = new byte[256];
+		//	Set.cityName = new char[256];
+		}
+
+		public settings ReadSettings()
+		{
+			StructFile sf = new StructFile(@"settings.dat", typeof(settings));
+			sf.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+			if( IsEmpty() )
+				WriteSettings( Settings.Set );
+
+		//	settings Set = new settings();
+		//	if (sf.GetNextStructureValue() != null)
+		//		Set = (settings)sf.GetNextStructureValue();
+			settings sets = (settings)sf.GetNextStructureValue();
+			sf.Close();
+
+			return sets;
+		}
+		public void Ser()
+		{
+			// Creates serializer.
+			var serializer = SerializationContext.Default.GetSerializer<settings>();
+			var stream = new MemoryStream();
+			// Pack obj to stream.
+			serializer.Pack(stream, Set);
+			Console.WriteLine(stream.ToString());
+		}
+		public settings DeSer(Stream stream)
+		{
+			// Creates serializer.
+			var serializer = SerializationContext.Default.GetSerializer<settings>();
+			// Unpack from stream.
+			var unpackedObject = serializer.Unpack(stream);
+			return unpackedObject;
+		}
+		public bool WriteSettings( settings sets )
+		{
+			StructFile sf = new StructFile(@"settings.dat", typeof(settings));
+			sf.Open(FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+
+			sf.WriteStructure(sets);
+			sf.Close();
+
+			Ser();
+
+			return true;
+		}
+
+		public bool IsEmpty()
+		{
+		//	return File.Exists(@"settings.dat");
+			FileStream fs = File.OpenRead(@"settings.dat");
+			bool isEmpty = false;
+			if (fs.Length <= 0)
+				isEmpty = true;
+			fs.Flush();
+			fs.Close();
+			return isEmpty;
+		}
+	}
+}
